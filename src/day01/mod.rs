@@ -12,21 +12,12 @@ pub fn day01() {
 
     let nums: Vec<i32> = lines.iter().map(|num| num.parse().unwrap()).collect();
 
-    let mut count = 0;
-    for i in nums.windows(2) {
-        if i[0] < i[1] {
-            count += 1;
-        }
-    }
+    println!("Day 01 - Part 1: {}", increasing(&nums, 1));
+    println!("Day 01 - Part 2: {}", increasing(&nums, 3));
+}
 
-    println!("Day 01 - Part 1: {}", count);
-
-    count = 0;
-    for i in nums.windows(4) {
-        if i[0] < i[3] {
-            count += 1;
-        }
-    }
-
-    println!("Day 01 - Part 2: {}", count);
+fn increasing(nums: &[i32], offset: usize) -> usize {
+    nums.windows(offset + 1)
+        .map(|x| (x[0] < x[offset]) as usize)
+        .sum() // fold(0, |a, b| a + b)
 }
