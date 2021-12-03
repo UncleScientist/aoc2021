@@ -1,14 +1,7 @@
-use std::fs::File;
-use std::io::prelude::*;
-use std::io::BufReader;
+use crate::utils::read_file;
 
 pub fn day02() {
-    let file = File::open("inputs/input-day02.txt").expect("Cannot find file");
-    let buf = BufReader::new(file);
-    let mut lines = buf
-        .lines()
-        .map(|line| line.unwrap())
-        .collect::<Vec<String>>();
+    let mut lines = read_file("inputs/input-day02.txt");
 
     println!("Day 02 - Part 1: {}", part1(&mut lines));
     println!("Day 02 - Part 2: {}", part2(&mut lines));
@@ -30,8 +23,6 @@ fn part1(commands: &mut Vec<String>) -> i32 {
 }
 
 fn part2(commands: &mut Vec<String>) -> i32 {
-    // (aim, hpos, depth)
-    //
     let mut aim = 0;
     let mut hpos = 0;
     let mut depth = 0;

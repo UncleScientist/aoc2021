@@ -1,14 +1,7 @@
-use std::fs::File;
-use std::io::prelude::*;
-use std::io::BufReader;
+use crate::utils::read_file;
 
 pub fn day01() {
-    let file = File::open("inputs/input-day01.txt").expect("Cannot find file");
-    let buf = BufReader::new(file);
-    let lines = buf
-        .lines()
-        .map(|line| line.unwrap())
-        .collect::<Vec<String>>();
+    let lines = read_file("inputs/input-day01.txt");
 
     let nums: Vec<i32> = lines.iter().map(|num| num.parse().unwrap()).collect();
 
