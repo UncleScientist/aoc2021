@@ -2,16 +2,17 @@ use crate::utils::read_file;
 
 pub fn day03() {
     let lines = read_file("inputs/input-day03.txt");
+    let nums : Vec<usize> = lines.iter().map(|n| usize::from_str_radix(n, 2).unwrap()).collect();
+    let bitwidth = lines[0].len();
 
-    println!("Day 03 - Part 1: {}", part1(&lines));
-    println!("Day 03 - Part 2: {}", part2(&lines));
+    println!("Day 03 - Part 1: {}", part1(&nums, bitwidth));
+    println!("Day 03 - Part 2: {}", part2(&nums, bitwidth));
 }
 
-fn part1(lines: &[String]) -> usize {
-    let bitwidth = lines[0].len();
-    let max = lines.len() / 2;
+fn part1(nums: &[usize], bitwidth: usize) -> usize {
+    let max = nums.len() / 2;
 
-    let count = bit_freq(lines, bitwidth);
+    let count = bit_freq(nums, bitwidth);
 
     let mut gamma = 0;
     for value in &count {
@@ -22,74 +23,50 @@ fn part1(lines: &[String]) -> usize {
     epsilon * gamma
 }
 
-fn part2(input_lines: &[String]) -> usize {
-    let bitwidth = input_lines[0].len();
+fn part2(nums: &[usize], bitwidth: usize) -> usize {
 
-    let mut lines = input_lines.to_owned();
-
-    for i in 0..bitwidth {
-        let max = lines.len();
-        let count = bit_freq(&lines, bitwidth);
-        let mut new_lines: Vec<String> = Vec::new();
-        if count[i] >= max - count[i] {
-            for l in lines {
-                if l.chars().nth(i).unwrap() == '1' {
-                    new_lines.push(l.clone().to_string());
-                }
-            }
-        } else {
-            for l in lines {
-                if l.chars().nth(i).unwrap() == '0' {
-                    new_lines.push(l.clone().to_string());
-                }
-            }
-        }
-        lines = new_lines;
-        if lines.len() < 2 {
-            break;
-        }
-    }
-
-    let oxygen = usize::from_str_radix(&lines[0], 2).unwrap();
-
-    lines = input_lines.to_owned();
-
-    for i in 0..bitwidth {
-        let max = lines.len();
-        let count = bit_freq(&lines, bitwidth);
-        let mut new_lines: Vec<String> = Vec::new();
-        if count[i] < max - count[i] {
-            for l in lines {
-                if l.chars().nth(i).unwrap() == '1' {
-                    new_lines.push(l.clone().to_string());
-                }
-            }
-        } else {
-            for l in lines {
-                if l.chars().nth(i).unwrap() == '0' {
-                    new_lines.push(l.clone().to_string());
-                }
-            }
-        }
-        lines = new_lines;
-        if lines.len() < 2 {
-            break;
-        }
-    }
-
-    let co2 = usize::from_str_radix(&lines[0], 2).unwrap();
+    let oxygen = filter(&nums, bitwidth, '1');
+    let co2 = filter(&nums, bitwidth, '0');
 
     oxygen * co2
 }
 
-fn bit_freq(lines: &[String], bitwidth: usize) -> Vec<usize> {
+fn bit_freq(nums: &[usize], bitwidth: usize) -> Vec<usize> {
     let mut count = vec![0; bitwidth];
-    for line in lines.iter().map(|s| s.chars()) {
-        for c in line.enumerate().filter(|(_, val)| *val == '1') {
-            count[c.0] += 1;
+    for i in 0..bitwidth {
+        for n in nums {
+            if (n & (1 << (bitwidth - i - 1))) != 0 {
+                count[i] += 1;
+            }
         }
     }
     count
+}
+
+fn filter(nums: &[usize], bitwidth: usize, key: char) -> usize {
+    let mut nums = nums.to_owned();
+
+    for i in 0..bitwidth {
+        let check = 1 << (bitwidth - i - 1);
+        let max = nums.len();
+        let count = bit_freq(&nums, bitwidth);
+        nums = nums.iter()
+            .map(|n| match (2 * count[i] >= max, (n & check) != 0) {
+                (true, true) if key == '1' => Some(*n),
+                (false, false) if key == '1' => Some(*n),
+                (true, false) if key == '0' => Some(*n),
+                (false, true) if key == '0' => Some(*n),
+                (_, _) => None,
+            })
+            .filter(|x| x.is_some())
+            .map(|x| x.unwrap())
+            .collect();
+        if nums.len() < 2 {
+            break;
+        }
+    }
+
+    nums[0]
 }
 
 #[cfg(test)]
@@ -113,7 +90,8 @@ mod tests {
             "01010".to_string(),
         ];
 
-        assert_eq!(part1(&lines), 198);
-        assert_eq!(part2(&lines), 230);
+        let nums : Vec<usize> = lines.iter().map(|n| usize::from_str_radix(n, 2).unwrap()).collect();
+        assert_eq!(part1(&nums, 5), 198);
+        assert_eq!(part2(&nums, 5), 230);
     }
 }
