@@ -27,29 +27,24 @@ fn part2(input_lines: &[String]) -> usize {
 
     let mut lines = input_lines.to_owned();
 
-    loop {
-        for i in 0..bitwidth {
-            let max = lines.len();
-            let count = bit_freq(&lines, bitwidth);
-            let mut new_lines: Vec<String> = Vec::new();
-            if count[i] >= max - count[i] {
-                for l in lines {
-                    if l.chars().nth(i).unwrap() == '1' {
-                        new_lines.push(l.clone().to_string());
-                    }
-                }
-            } else {
-                for l in lines {
-                    if l.chars().nth(i).unwrap() == '0' {
-                        new_lines.push(l.clone().to_string());
-                    }
+    for i in 0..bitwidth {
+        let max = lines.len();
+        let count = bit_freq(&lines, bitwidth);
+        let mut new_lines: Vec<String> = Vec::new();
+        if count[i] >= max - count[i] {
+            for l in lines {
+                if l.chars().nth(i).unwrap() == '1' {
+                    new_lines.push(l.clone().to_string());
                 }
             }
-            lines = new_lines;
-            if lines.len() < 2 {
-                break;
+        } else {
+            for l in lines {
+                if l.chars().nth(i).unwrap() == '0' {
+                    new_lines.push(l.clone().to_string());
+                }
             }
         }
+        lines = new_lines;
         if lines.len() < 2 {
             break;
         }
@@ -59,29 +54,24 @@ fn part2(input_lines: &[String]) -> usize {
 
     lines = input_lines.to_owned();
 
-    loop {
-        for i in 0..bitwidth {
-            let max = lines.len();
-            let count = bit_freq(&lines, bitwidth);
-            let mut new_lines: Vec<String> = Vec::new();
-            if count[i] < max - count[i] {
-                for l in lines {
-                    if l.chars().nth(i).unwrap() == '1' {
-                        new_lines.push(l.clone().to_string());
-                    }
-                }
-            } else {
-                for l in lines {
-                    if l.chars().nth(i).unwrap() == '0' {
-                        new_lines.push(l.clone().to_string());
-                    }
+    for i in 0..bitwidth {
+        let max = lines.len();
+        let count = bit_freq(&lines, bitwidth);
+        let mut new_lines: Vec<String> = Vec::new();
+        if count[i] < max - count[i] {
+            for l in lines {
+                if l.chars().nth(i).unwrap() == '1' {
+                    new_lines.push(l.clone().to_string());
                 }
             }
-            lines = new_lines;
-            if lines.len() < 2 {
-                break;
+        } else {
+            for l in lines {
+                if l.chars().nth(i).unwrap() == '0' {
+                    new_lines.push(l.clone().to_string());
+                }
             }
         }
+        lines = new_lines;
         if lines.len() < 2 {
             break;
         }
