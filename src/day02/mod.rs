@@ -1,13 +1,13 @@
 use crate::utils::read_file;
 
 pub fn day02() {
-    let mut lines = read_file("inputs/input-day02.txt");
+    let lines = read_file("inputs/input-day02.txt");
 
-    println!("Day 02 - Part 1: {}", part1(&mut lines));
-    println!("Day 02 - Part 2: {}", part2(&mut lines));
+    println!("Day 02 - Part 1: {}", part1(&lines));
+    println!("Day 02 - Part 2: {}", part2(&lines));
 }
 
-fn part1(commands: &mut Vec<String>) -> i32 {
+fn part1(commands: &[String]) -> i32 {
     let result: (i32, i32) = commands
         .iter()
         .map(|s| s.split_whitespace())
@@ -22,7 +22,7 @@ fn part1(commands: &mut Vec<String>) -> i32 {
     result.0 * result.1
 }
 
-fn part2(commands: &mut Vec<String>) -> i32 {
+fn part2(commands: &[String]) -> i32 {
     let mut aim = 0;
     let mut hpos = 0;
     let mut depth = 0;
