@@ -98,16 +98,6 @@ impl Board {
 
         None
     }
-
-    #[cfg(test)]
-    pub fn print(&self) {
-        for row in 0..self.size {
-            for col in 0..self.size {
-                print!(" {:2}", self.grid[row * self.size + col]);
-            }
-            println!();
-        }
-    }
 }
 
 #[cfg(test)]

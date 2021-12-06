@@ -6,12 +6,15 @@ use std::collections::HashMap;
 pub fn day05() {
     let lines = read_file("inputs/input-day05.txt");
 
-    println!("Day 05 - Part 1: {}", solve_part_1(&lines));
+    let (part1, part2) = solve_both_parts(&lines);
+    println!("Day 05 - Part 1: {}", part1);
+    println!("Day 05 - Part 2: {}", part2);
 }
 
-fn solve_part_1(lines: &[String]) -> usize {
+fn solve_both_parts(lines: &[String]) -> (usize, usize) {
     let re = Regex::new(r"(?P<x1>\d+),(?P<y1>\d+) -> (?P<x2>\d+),(?P<y2>\d+)").unwrap();
     let mut hm: HashMap<(usize, usize), usize> = HashMap::new();
+    let mut diags: Vec<(usize, usize, usize, usize)> = Vec::new();
 
     for l in lines {
         let caps = re.captures(l).unwrap();
@@ -30,10 +33,34 @@ fn solve_part_1(lines: &[String]) -> usize {
             for x in startx..=endx {
                 *hm.entry((x, y1)).or_default() += 1;
             }
+        } else {
+            diags.push((x1, y1, x2, y2));
         }
     }
 
-    hm.values().filter(|&x| *x > 1).count() as usize
+    let part1 = hm.values().filter(|&x| *x > 1).count() as usize;
+
+    for d in &diags {
+        let (mut x1, mut y1, x2, y2) = d;
+        while x1 != *x2 {
+            *hm.entry((x1, y1)).or_default() += 1;
+            if x1 < *x2 {
+                x1 += 1;
+            } else if x1 > *x2 {
+                x1 -= 1;
+            }
+            if y1 < *y2 {
+                y1 += 1;
+            } else if y1 > *y2 {
+                y1 -= 1;
+            }
+        }
+        *hm.entry((x1, y1)).or_default() += 1;
+    }
+
+    let part2 = hm.values().filter(|&x| *x > 1).count() as usize;
+
+    (part1, part2)
 }
 
 #[cfg(test)]
@@ -55,6 +82,6 @@ mod tests {
             "5,5 -> 8,2".to_string(),
         ];
 
-        assert_eq!(solve_part_1(&lines), 5);
+        assert_eq!(solve_both_parts(&lines), (5, 12));
     }
 }
