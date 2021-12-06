@@ -4,6 +4,7 @@ pub fn day06() {
     let mut school = parse(lanternfish);
 
     println!("Day 06 - Part 1: {}", cycle(&mut school, 80));
+    println!("Day 06 - Part 2: {}", cycle(&mut school, 256 - 80));
 }
 
 fn parse(line: String) -> Vec<u64> {
@@ -52,5 +53,11 @@ mod tests {
     fn test_80_days() {
         let mut x = parse("3,4,3,1,2".to_string());
         assert_eq!(cycle(&mut x, 80), 5934);
+    }
+
+    #[test]
+    fn test_256_days() {
+        let mut x = parse("3,4,3,1,2".to_string());
+        assert_eq!(cycle(&mut x, 256), 26984457539);
     }
 }
