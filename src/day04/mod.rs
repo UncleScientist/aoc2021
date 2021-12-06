@@ -4,18 +4,28 @@ pub fn day04() {
     let lines = read_file("inputs/input-day04.txt");
 
     let (nlist, mut blist) = parse_boards(&lines);
-    println!("Day 04 - Part 1: {}", find_winner(nlist, &mut blist));
+    let (first, last) = find_winners(nlist, &mut blist);
+
+    println!("Day 04 - Part 1: {}", first);
+    println!("Day 04 - Part 2: {}", last);
 }
 
-fn find_winner(numbers: Vec<i32>, boards: &mut Vec<Board>) -> i32 {
+fn find_winners(numbers: Vec<i32>, boards: &mut Vec<Board>) -> (i32, i32) {
+    let mut first_winner = None;
+    let mut last_winner = 0;
+
     for call in numbers {
         for b in &mut *boards {
             if let Some(winner) = b.call_number(call) {
-                return winner;
+                if first_winner == None {
+                    first_winner = Some(winner);
+                }
+                last_winner = winner;
             }
         }
     }
-    0
+
+    (first_winner.unwrap(), last_winner)
 }
 
 fn parse_boards(data: &[String]) -> (Vec<i32>, Vec<Board>) {
@@ -44,11 +54,16 @@ fn parse_boards(data: &[String]) -> (Vec<i32>, Vec<Board>) {
 struct Board {
     grid: Vec<i32>,
     size: usize,
+    won: bool,
 }
 
 impl Board {
     pub fn new(grid: Vec<i32>, size: usize) -> Board {
-        Board { grid, size }
+        Board {
+            grid,
+            size,
+            won: false,
+        }
     }
 
     #[cfg(test)]
@@ -57,6 +72,9 @@ impl Board {
     }
 
     pub fn call_number(&mut self, called: i32) -> Option<i32> {
+        if self.won {
+            return None;
+        }
         if let Some(loc) = self.grid.iter().position(|loc| *loc == called) {
             self.grid[loc] = -1;
 
@@ -73,6 +91,7 @@ impl Board {
             if rsum == -5 || csum == -5 {
                 // TODO: fix size for -5
                 let sum: i32 = self.grid.iter().filter(|&x| *x != -1).sum();
+                self.won = true;
                 return Some(sum * called);
             }
         }
@@ -121,22 +140,9 @@ mod tests {
         ];
 
         let (nlist, mut blist) = parse_boards(&input_data);
-
-        let mut won = false;
-        'outer: for call in nlist {
-            println!("\ncalling number {}", call);
-            for b in &mut blist {
-                if let Some(winner) = b.call_number(call) {
-                    won = true;
-                    assert_eq!(winner, 4512);
-                    break 'outer;
-                }
-                b.print();
-                println!("-");
-            }
-        }
-
-        assert!(won);
+        let (first, last) = find_winners(nlist, &mut blist);
+        assert_eq!(first, 4512);
+        assert_eq!(last, 1924);
     }
 
     #[test]
