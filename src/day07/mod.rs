@@ -15,48 +15,32 @@ pub fn day07() {
         }
     }
 
-    let mut least_fuel = cost(&crabs, 0);
-    for i in 1..largest {
-        let cost = cost(&crabs, i);
-        if cost < least_fuel {
-            least_fuel = cost;
+    for (part, func) in [linear_dist, arithmetic_dist].iter().enumerate() {
+        let mut least_fuel = cost(&crabs, 0, *func);
+        for i in 1..largest {
+            let cost = cost(&crabs, i, *func);
+            if cost < least_fuel {
+                least_fuel = cost;
+            }
         }
+        println!("Day 07 - Part {}: {}", part + 1, least_fuel);
     }
-
-    println!("Day 07 - Part 1: {}", least_fuel);
-
-    least_fuel = cost2(&crabs, 0);
-    for i in 1..largest {
-        let cost = cost2(&crabs, i);
-        if cost < least_fuel {
-            least_fuel = cost;
-        }
-    }
-
-    println!("Day 07 - Part 2: {}", least_fuel);
 }
 
-// 1+2+3+4+...+n = n(n+1)/2
-
-fn cost(crabs: &HashMap<i32, i32>, pos: i32) -> i32 {
+fn cost(crabs: &HashMap<i32, i32>, pos: i32, cb: fn(i32) -> i32) -> i32 {
     let mut total = 0;
     for (hpos, num) in crabs.iter() {
         if *hpos != pos {
-            total += num * i32::abs(pos - hpos);
+            total += num * cb(i32::abs(pos - hpos));
         }
     }
 
     total
 }
 
-fn cost2(crabs: &HashMap<i32, i32>, pos: i32) -> i32 {
-    let mut total = 0;
-    for (hpos, num) in crabs.iter() {
-        if *hpos != pos {
-            let dist = i32::abs(pos - hpos);
-            total += num * (dist * (dist + 1)) / 2;
-        }
-    }
-
-    total
+fn linear_dist(dist: i32) -> i32 {
+    dist
+}
+fn arithmetic_dist(dist: i32) -> i32 {
+    dist * (dist + 1) / 2
 }
