@@ -1,3 +1,5 @@
+use std::cmp::Ordering::{Greater, Less};
+
 use regex::Regex;
 
 use crate::utils::read_file;
@@ -44,15 +46,15 @@ fn solve_both_parts(lines: &[String]) -> (usize, usize) {
         let (mut x1, mut y1, x2, y2) = d;
         while x1 != *x2 {
             *hm.entry((x1, y1)).or_default() += 1;
-            if x1 < *x2 {
-                x1 += 1;
-            } else if x1 > *x2 {
-                x1 -= 1;
+            match x1.cmp(x2) {
+                Less => x1 += 1,
+                Greater => x1 -= 1,
+                _ => {}
             }
-            if y1 < *y2 {
-                y1 += 1;
-            } else if y1 > *y2 {
-                y1 -= 1;
+            match y1.cmp(y2) {
+                Less => y1 += 1,
+                Greater => y1 -= 1,
+                _ => {}
             }
         }
         *hm.entry((x1, y1)).or_default() += 1;
@@ -68,7 +70,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_part_1() {
+    fn test_both_parts() {
         let lines = vec![
             "0,9 -> 5,9".to_string(),
             "8,0 -> 0,8".to_string(),
