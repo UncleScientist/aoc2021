@@ -24,13 +24,37 @@ pub fn day07() {
     }
 
     println!("Day 07 - Part 1: {}", least_fuel);
+
+    least_fuel = cost2(&crabs, 0);
+    for i in 1..largest {
+        let cost = cost2(&crabs, i);
+        if cost < least_fuel {
+            least_fuel = cost;
+        }
+    }
+
+    println!("Day 07 - Part 2: {}", least_fuel);
 }
+
+// 1+2+3+4+...+n = n(n+1)/2
 
 fn cost(crabs: &HashMap<i32, i32>, pos: i32) -> i32 {
     let mut total = 0;
     for (hpos, num) in crabs.iter() {
         if *hpos != pos {
             total += num * i32::abs(pos - hpos);
+        }
+    }
+
+    total
+}
+
+fn cost2(crabs: &HashMap<i32, i32>, pos: i32) -> i32 {
+    let mut total = 0;
+    for (hpos, num) in crabs.iter() {
+        if *hpos != pos {
+            let dist = i32::abs(pos - hpos);
+            total += num * (dist * (dist + 1)) / 2;
         }
     }
 
