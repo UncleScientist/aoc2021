@@ -7,40 +7,28 @@ pub fn day07() {
     let subs: Vec<i32> = real_input.split(',').map(|x| x.parse().unwrap()).collect();
     let mut crabs: HashMap<i32, i32> = HashMap::new();
 
-    let mut largest = 0;
-    for s in &subs {
-        *crabs.entry(*s).or_default() += 1;
-        if *s > largest {
-            largest = *s;
-        }
-    }
+    let largest = *subs
+        .iter()
+        .map(|x| {
+            *crabs.entry(*x).or_default() += 1;
+            x
+        })
+        .max()
+        .unwrap();
 
-    for (part, func) in [linear_dist, arithmetic_dist].iter().enumerate() {
-        let mut least_fuel = cost(&crabs, 0, *func);
-        for i in 1..largest {
-            let cost = cost(&crabs, i, *func);
-            if cost < least_fuel {
-                least_fuel = cost;
-            }
-        }
-        println!("Day 07 - Part {}: {}", part + 1, least_fuel);
-    }
+    println!("Day 07 - Part 1: {}", total(&crabs, largest, |x| x));
+    println!(
+        "Day 07 - Part 2: {}",
+        total(&crabs, largest, |x| x * (x + 1) / 2)
+    );
+}
+
+fn total(crabs: &HashMap<i32, i32>, largest: i32, cb: fn(i32) -> i32) -> i32 {
+    (0..largest).map(|x| cost(crabs, x, cb)).min().unwrap()
 }
 
 fn cost(crabs: &HashMap<i32, i32>, pos: i32, cb: fn(i32) -> i32) -> i32 {
-    let mut total = 0;
-    for (hpos, num) in crabs.iter() {
-        if *hpos != pos {
-            total += num * cb(i32::abs(pos - hpos));
-        }
-    }
-
-    total
-}
-
-fn linear_dist(dist: i32) -> i32 {
-    dist
-}
-fn arithmetic_dist(dist: i32) -> i32 {
-    dist * (dist + 1) / 2
+    crabs
+        .iter()
+        .fold(0, |sum, (hpos, num)| sum + num * cb(i32::abs(pos - hpos)))
 }
