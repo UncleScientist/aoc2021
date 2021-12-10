@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 mod utils;
 
 mod day01;
@@ -12,14 +14,27 @@ mod day09;
 mod day10;
 
 fn main() {
-    day01::day01();
-    day02::day02();
-    day03::day03();
-    day04::day04();
-    day05::day05();
-    day06::day06();
-    day07::day07();
-    day08::day08();
-    day09::day09();
-    day10::day10();
+    let days: Vec<fn()> = vec![
+        day01::day01,
+        day02::day02,
+        day03::day03,
+        day04::day04,
+        day05::day05,
+        day06::day06,
+        day07::day07,
+        day08::day08,
+        day09::day09,
+        day10::day10,
+    ];
+
+    for d in days {
+        let now = Instant::now();
+        d();
+        let elapsed = now.elapsed();
+
+        println!(
+            "-- Completion time: {:6.2}ms\n",
+            elapsed.as_micros() as f64 / 1000.
+        );
+    }
 }
