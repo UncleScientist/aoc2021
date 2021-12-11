@@ -18,12 +18,32 @@ pub fn day11() {
     }
 
     let mut octos = Grid { grid, width };
-    let mut total_flashes = 0;
+    let mut part1 = 0;
+    let all_flash = octos.grid.len();
+    let mut part2 = 0;
 
-    for _ in 0..100 {
-        total_flashes += octos.step();
+    let mut part1_done = false;
+    let mut part2_done = false;
+    let mut steps = 0;
+
+    while !part1_done || !part2_done {
+        let flash_count = octos.step();
+        steps += 1;
+
+        if steps <= 100 {
+            part1 += flash_count;
+        } else {
+            part1_done = true;
+        }
+
+        if flash_count == all_flash {
+            part2 = steps;
+            part2_done = true;
+        }
     }
-    println!("Day 11 - Part 1: {}", total_flashes);
+
+    println!("Day 11 - Part 1: {}", part1);
+    println!("Day 11 - Part 2: {}", part2);
 }
 
 // 8 directions: N, NE, E, SE, S, SW, W, NW
@@ -39,23 +59,12 @@ const DIRS: [(i32, i32); 8] = [
 ];
 
 impl Grid {
-    /*
-    fn print(&self) {
-        let mut idx = 0;
-        for _ in 0..self.height {
-            for _ in 0..self.width {
-                print!("{}", self.grid[idx]);
-                idx += 1;
-            }
-            println!();
-        }
-    }
-    */
-
+    // convert index to x,y coord
     fn xy(&self, idx: usize) -> (i32, i32) {
         ((idx % self.width) as i32, (idx / self.width) as i32)
     }
 
+    // convert x,y coord to index
     fn idx(&self, x: i32, y: i32) -> Option<usize> {
         if x < 0 || y < 0 || x >= self.width as i32 || y >= self.width as i32 {
             None
@@ -64,10 +73,12 @@ impl Grid {
         }
     }
 
+    // do one step of the problem
     fn step(&mut self) -> usize {
         let mut flashers: Vec<(i32, i32)> = Vec::new();
         let mut flashed = 0;
 
+        // find all octopusses which will flash this turn
         for i in 0..self.grid.len() {
             self.grid[i] += 1;
             if self.grid[i] > 9 {
@@ -75,6 +86,7 @@ impl Grid {
             }
         }
 
+        // find any octopusses triggered by the above flashers
         while !flashers.is_empty() {
             let (x, y) = flashers.pop().unwrap();
             flashed += 1;
@@ -92,6 +104,7 @@ impl Grid {
             }
         }
 
+        // set any flashed octopusses to 0
         for i in 0..self.grid.len() {
             if self.grid[i] > 9 {
                 self.grid[i] = 0;
