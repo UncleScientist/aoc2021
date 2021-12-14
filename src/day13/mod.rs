@@ -29,16 +29,20 @@ pub fn day13() {
         }
         idx += 1;
     }
-    idx += 1;   // skip blank line
+    idx += 1; // skip blank line
 
-    let mut paper = Grid { grid, width: width + 1, height: height + 1 };
+    let mut paper = Grid {
+        grid,
+        width: width + 1,
+        height: height + 1,
+    };
     let mut did_part_1 = false;
     while idx < lines.len() {
         let mut split = lines[idx].split(' ');
         split.next();
         split.next();
         if let Some((axis, strline)) = split.next().unwrap().split_once('=') {
-            let num : usize = strline.parse().unwrap();
+            let num: usize = strline.parse().unwrap();
             if axis == "x" {
                 paper.fold_x(num);
             } else {
