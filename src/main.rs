@@ -1,3 +1,5 @@
+use chrono::Datelike;
+use std::env;
 use std::time::Instant;
 
 mod utils;
@@ -30,19 +32,34 @@ fn main() {
         day09::day09,
         day10::day10,
         day11::day11,
+        day12::day12,
         day13::day13,
         day14::day14,
-        day12::day12,
     ];
 
-    for d in days {
-        let now = Instant::now();
-        d();
-        let elapsed = now.elapsed();
-
-        println!(
-            "-- Completion time: {:6.2}ms\n",
-            elapsed.as_micros() as f64 / 1000.
-        );
+    let args: Vec<String> = env::args().collect();
+    if args.len() > 1 {
+        if args[1] == "-a" {
+            for d in days {
+                run(d);
+            }
+        } else if let Ok(day) = args[1].parse::<usize>() {
+            run(days[day - 1]);
+        }
+    } else {
+        let today = chrono::Local::now();
+        if today.month() == 12 {
+            run(days[today.day() as usize - 1]);
+        }
     }
+}
+
+fn run(func: fn()) {
+    let now = Instant::now();
+    func();
+    let elapsed = now.elapsed();
+    println!(
+        "-- Completion time: {:6.2}ms\n",
+        elapsed.as_micros() as f64 / 1000.
+    );
 }
