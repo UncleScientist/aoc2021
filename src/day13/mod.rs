@@ -15,7 +15,7 @@ pub fn day13() {
     let mut height = 0;
     let mut grid = HashSet::new();
     let mut idx = 0;
-    while lines[idx] != "" {
+    while !lines[idx].is_empty() {
         if let Some((strx, stry)) = lines[idx].split_once(',') {
             let x: i32 = strx.parse().unwrap();
             let y: i32 = stry.parse().unwrap();
