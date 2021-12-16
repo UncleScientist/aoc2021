@@ -4,7 +4,9 @@ use std::slice::*;
 pub fn day16() {
     let lines = read_file("inputs/input-day16.txt");
     let decode = decode_hex(&lines[0]);
-    println!("Day 16 - Part 1: {:?}", calculate(&decode));
+    let (version, values) = calculate(&decode);
+    println!("Day 16 - Part 1: {:?}", version);
+    println!("Day 16 - Part 2: {:?}", values[0]);
 }
 
 trait BitReader {
@@ -36,18 +38,19 @@ fn decode_hex(hex: &str) -> Vec<u8> {
 
 fn calculate(bits: &[u8]) -> (u64, Vec<u64>) {
     let mut iter = bits.iter();
-    calculate_packets(&mut iter, true)
+    calculate_packets(&mut iter).unwrap()
 }
 
-fn calculate_packets(iter: &mut Iter<'_, u8>, first: bool) -> (u64, Vec<u64>) {
+fn calculate_packets(iter: &mut Iter<'_, u8>) -> Option<(u64, Vec<u64>)> {
     let mut version = 0;
     let mut value = Vec::new();
+    let mut decoded = false;
 
-    while let Some(v) = iter.next() {
+    if let Some(v) = iter.next() {
+        decoded = true;
         let rest = iter.bits_to_num(2);
         version += (v << 2) as u64 | rest;
         let msg_type = iter.bits_to_num(3);
-        println!("{} msg type == {}", first, msg_type);
         if msg_type == 4 {
             let mut digit = iter.bits_to_num(5);
             let mut result = 0;
@@ -56,54 +59,46 @@ fn calculate_packets(iter: &mut Iter<'_, u8>, first: bool) -> (u64, Vec<u64>) {
                 digit = iter.bits_to_num(5);
             }
             result = result << 4 | (digit & 0xf);
-            println!(" > literal {}", result);
             value.push(result);
         } else {
             let len_type = iter.bits_to_num(1);
             if len_type == 0 {
                 let subpacket_len = iter.bits_to_num(15);
-                println!("packet-by-len {}", subpacket_len);
                 let subpackets: Vec<u8> = iter.take(subpacket_len as usize).copied().collect();
                 let mut newiter = subpackets.iter();
-                let (versum, valsum) = calculate_packets(&mut newiter, false);
-                version += versum;
-                value.extend(valsum);
-            } else {
-                let subpacket_count = iter.bits_to_num(11);
-                println!("packet-by-count {}", subpacket_count);
-                for _ in 0..subpacket_count {
-                    let (versum, valsum) = calculate_packets(iter, true);
-                    println!(" > packet values are: {:?}", valsum);
+                while let Some((versum, valsum)) = calculate_packets(&mut newiter) {
                     version += versum;
                     value.extend(valsum);
-                    println!(" > current values: {:?}", value);
+                }
+            } else {
+                let subpacket_count = iter.bits_to_num(11);
+                for _ in 0..subpacket_count {
+                    let (versum, valsum) = calculate_packets(iter).unwrap();
+                    version += versum;
+                    value.extend(valsum);
                 }
             }
             match msg_type {
-                0 => { 
+                0 => {
                     let newval = value.iter().sum();
                     value.clear();
-                    println!("sum is {}", newval);
                     value.push(newval);
-                },
+                }
                 1 => {
                     let newval = value.iter().product();
                     value.clear();
-                    println!("product is {}", newval);
                     value.push(newval);
-                },
+                }
                 2 => {
                     let newval = *value.iter().min().unwrap();
                     value.clear();
                     value.push(newval);
-                },
+                }
                 3 => {
-                    println!("values = {:?}", value);
                     let newval = *value.iter().max().unwrap();
-                    println!("max = {}", newval);
                     value.clear();
                     value.push(newval);
-                },
+                }
 
                 5 => {
                     let left = value[0];
@@ -120,30 +115,28 @@ fn calculate_packets(iter: &mut Iter<'_, u8>, first: bool) -> (u64, Vec<u64>) {
                 }
 
                 7 => {
-                    println!("eq - {:?}", value);
                     let left = value[0];
                     let right = value[1];
                     value.clear();
                     value.push((left == right) as u64);
                 }
 
-                _ => panic!()
+                _ => panic!(),
             }
-        }
-
-        if first {
-            break;
         }
     }
 
-    println!("returning value: {:?}", value);
-    (version, value)
+    if decoded {
+        Some((version, value))
+    } else {
+        None
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-/*
+
     #[test]
     fn can_decode_hex() {
         assert_eq!(
@@ -235,7 +228,7 @@ mod tests {
         let bits = decode_hex("9C005AC2F8F0");
         assert_eq!(*calculate(&bits).1.iter().next().unwrap(), 0);
     }
-*/
+
     #[test]
     fn math() {
         let bits = decode_hex("9C0141080250320F1802104A08");
