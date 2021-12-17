@@ -1,5 +1,5 @@
 use crate::utils::read_file;
-use std::collections::{HashMap, HashSet};
+use std::collections::{BinaryHeap, HashMap, HashSet};
 
 const DIRS: &[(i32, i32); 4] = &[(1, 0), (0, 1), (-1, 0), (0, -1)];
 
@@ -14,7 +14,7 @@ struct Dijkstra {
 struct AStar {
     width: i32,
     height: i32,
-    open_set: HashSet<(i32, i32)>,
+    open_set: BinaryHeap<(usize, (i32, i32))>,
     cost: HashMap<(i32, i32), usize>,
     came_from: HashMap<(i32, i32), (i32, i32)>,
     g_score: HashMap<(i32, i32), usize>,
@@ -32,25 +32,13 @@ pub fn day15() {
 }
 
 fn astar_search(astar: &mut AStar) -> usize {
-    let mut current = None;
-    while !astar.open_set.is_empty() {
-        // Use BinaryHeap to find min instead of this mess:
-        let mut smallest = std::usize::MAX;
-        let mut found: (i32, i32) = (0, 0);
-        for k in astar.open_set.iter() {
-            let fscore = *astar.f_score.get(k).unwrap();
-            if fscore < smallest {
-                smallest = fscore;
-                found = *k
-            }
-        }
+    loop {
+        let found = astar.open_set.pop().unwrap().1;
 
         if found.0 == astar.width - 1 && found.1 == astar.height - 1 {
-            current = Some(found);
-            break;
+            break *astar.g_score.get(&found).unwrap();
         }
 
-        astar.open_set.remove(&found);
         for d in DIRS {
             let neighbor = (found.0 + d.0, found.1 + d.1);
             if neighbor.0 < 0
@@ -69,17 +57,22 @@ fn astar_search(astar: &mut AStar) -> usize {
                 *astar.f_score.entry(neighbor).or_default() = tentative
                     + (astar.width - neighbor.0) as usize
                     + (astar.height - neighbor.1) as usize;
-                astar.open_set.insert(neighbor);
+                astar.open_set.push((
+                    tentative
+                        + (astar.width - neighbor.0) as usize
+                        + (astar.height - neighbor.1) as usize,
+                    neighbor,
+                ));
             }
         }
     }
 
-    if let Some(current) = current {
-        return astar.g_score.get(&current).unwrap() + astar.cost.get(&current).unwrap()
-            - astar.cost.get(&(0, 0)).unwrap();
-    }
-
-    0
+    // if let Some(current) = current {
+    //     return astar.g_score.get(&current).unwrap() + astar.cost.get(&current).unwrap()
+    //         - astar.cost.get(&(0, 0)).unwrap();
+    // }
+    //
+    // 0
 }
 
 fn dijkstra_search(di: &mut Dijkstra) -> usize {
@@ -149,8 +142,8 @@ fn build_part_2(lines: &[String]) -> AStar {
     let mut f_score: HashMap<(i32, i32), usize> = HashMap::new();
     let mut cost: HashMap<(i32, i32), usize> = HashMap::new();
 
-    let mut open_set: HashSet<(i32, i32)> = HashSet::new();
-    open_set.insert((0, 0));
+    let mut open_set: BinaryHeap<(usize, (i32, i32))> = BinaryHeap::new();
+    open_set.push((0, (0, 0)));
 
     for (y, l) in lines.iter().enumerate() {
         for (x, c) in l.chars().enumerate() {
