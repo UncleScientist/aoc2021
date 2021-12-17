@@ -1,5 +1,5 @@
 use crate::utils::read_file;
-use std::collections::{BinaryHeap, HashMap, HashSet};
+use std::collections::{BinaryHeap, HashMap};
 
 const DIRS: &[(i32, i32); 4] = &[(1, 0), (0, 1), (-1, 0), (0, -1)];
 
@@ -36,43 +36,39 @@ fn astar_search(astar: &mut AStar) -> usize {
         let found = astar.open_set.pop().unwrap().1;
 
         if found.0 == astar.width - 1 && found.1 == astar.height - 1 {
-            break *astar.g_score.get(&found).unwrap();
+            break *astar.g_score.get(&found).unwrap() - astar.cost.get(&(0, 0)).unwrap()
+                + astar
+                    .cost
+                    .get(&(astar.width - 1, astar.height - 1))
+                    .unwrap();
         }
 
         for d in DIRS {
             let neighbor = (found.0 + d.0, found.1 + d.1);
             if neighbor.0 < 0
                 || neighbor.1 < 0
-                || neighbor.0 > astar.width - 1
-                || neighbor.1 > astar.height - 1
+                || neighbor.0 >= astar.width
+                || neighbor.1 >= astar.height
             {
                 continue;
             }
             let tentative = astar.g_score.get(&found).unwrap() + astar.cost.get(&found).unwrap();
-            if !astar.g_score.contains_key(&neighbor)
-                || tentative < *astar.g_score.get(&neighbor).unwrap()
-            {
+            if tentative < *astar.g_score.get(&neighbor).unwrap() {
                 astar.came_from.insert(neighbor, found);
                 *astar.g_score.entry(neighbor).or_default() = tentative;
                 *astar.f_score.entry(neighbor).or_default() = tentative
                     + (astar.width - neighbor.0) as usize
                     + (astar.height - neighbor.1) as usize;
                 astar.open_set.push((
-                    tentative
-                        + (astar.width - neighbor.0) as usize
-                        + (astar.height - neighbor.1) as usize,
+                    std::usize::MAX
+                        - (tentative
+                            + (astar.width - neighbor.0) as usize
+                            + (astar.height - neighbor.1) as usize),
                     neighbor,
                 ));
             }
         }
     }
-
-    // if let Some(current) = current {
-    //     return astar.g_score.get(&current).unwrap() + astar.cost.get(&current).unwrap()
-    //         - astar.cost.get(&(0, 0)).unwrap();
-    // }
-    //
-    // 0
 }
 
 fn dijkstra_search(di: &mut Dijkstra) -> usize {
