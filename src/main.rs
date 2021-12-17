@@ -44,19 +44,28 @@ fn main() {
     ];
 
     let args: Vec<String> = env::args().collect();
+    let today = chrono::Local::now();
+    let mut run_all = false;
+    let mut which_day = today.day() as usize - 1;
+
     if args.len() > 1 {
         if args[1] == "-a" {
-            for d in days {
-                run(d);
-            }
+            run_all = true;
         } else if let Ok(day) = args[1].parse::<usize>() {
-            run(days[day - 1]);
+            which_day = day - 1;
+        }
+    } else if today.month() == 12 {
+        which_day = today.day() as usize - 1;
+    } else {
+        run_all = true;
+    }
+
+    if run_all {
+        for d in days {
+            run(d);
         }
     } else {
-        let today = chrono::Local::now();
-        if today.month() == 12 {
-            run(days[today.day() as usize - 1]);
-        }
+        run(days[which_day]);
     }
 }
 
