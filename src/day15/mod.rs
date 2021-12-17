@@ -56,16 +56,11 @@ fn astar_search(astar: &mut AStar) -> usize {
             if tentative < *astar.g_score.get(&neighbor).unwrap() {
                 astar.came_from.insert(neighbor, found);
                 *astar.g_score.entry(neighbor).or_default() = tentative;
-                *astar.f_score.entry(neighbor).or_default() = tentative
+                let f_score = tentative
                     + (astar.width - neighbor.0) as usize
                     + (astar.height - neighbor.1) as usize;
-                astar.open_set.push((
-                    std::usize::MAX
-                        - (tentative
-                            + (astar.width - neighbor.0) as usize
-                            + (astar.height - neighbor.1) as usize),
-                    neighbor,
-                ));
+                *astar.f_score.entry(neighbor).or_default() = f_score;
+                astar.open_set.push((std::usize::MAX - f_score, neighbor));
             }
         }
     }
