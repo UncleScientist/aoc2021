@@ -27,17 +27,28 @@ pub fn day19() {
     }
     scanners.push_back(scanner);
 
-    let vec = accumulate(&mut scanners);
+    let (p1, p2) = accumulate(&mut scanners);
     let mut hs: Scanner = HashSet::new();
-    for v in &vec {
+    for v in &p1 {
         hs.extend(v);
     }
 
-    println!("{:?}", hs.len());
+    println!("Day 19 - Part 1: {:?}", hs.len());
+
+    let mut highest = 0;
+    for i in 0..p2.len() - 1 {
+        for j in i + 1..p2.len() {
+            let dist =
+                (p2[i].0 - p2[j].0).abs() + (p2[i].1 - p2[j].1).abs() + (p2[i].2 - p2[j].2).abs();
+            highest = highest.max(dist);
+        }
+    }
+    println!("Day 19 - Part 2: {:?}", highest);
 }
 
-fn accumulate(list: &mut VecDeque<Scanner>) -> Vec<Scanner> {
+fn accumulate(list: &mut VecDeque<Scanner>) -> (Vec<Scanner>, Vec<ScanData>) {
     let mut known: Vec<Scanner> = Vec::new();
+    let mut offsets: Vec<ScanData> = Vec::new();
 
     known.push(list.pop_front().unwrap());
 
@@ -46,8 +57,9 @@ fn accumulate(list: &mut VecDeque<Scanner>) -> Vec<Scanner> {
         let mut idx = 0;
         'outer: for (e, mut check) in list.iter_mut().enumerate() {
             for k in &known {
-                if rotate_and_compare(&k, &mut check).is_some() {
+                if let Some(offset) = rotate_and_compare(k, &mut check) {
                     found = Some(check);
+                    offsets.push(offset);
                     idx = e;
                     break 'outer;
                 }
@@ -64,7 +76,7 @@ fn accumulate(list: &mut VecDeque<Scanner>) -> Vec<Scanner> {
         println!("{} left to go", list.len());
     }
 
-    known
+    (known, offsets)
 }
 
 fn rotate_and_compare(known: &Scanner, check: &mut Scanner) -> Option<ScanData> {
@@ -106,7 +118,7 @@ fn rotate_and_compare(known: &Scanner, check: &mut Scanner) -> Option<ScanData> 
     None
 }
 
-fn alignment(known: &Scanner, check: &Vec<ScanData>) -> Option<ScanData> {
+fn alignment(known: &Scanner, check: &[ScanData]) -> Option<ScanData> {
     for pk in known {
         for pc in check {
             let dx = pk.0 - pc.0;
