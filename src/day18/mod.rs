@@ -4,7 +4,7 @@ use std::collections::VecDeque;
 
 type SnailNum = VecDeque<Tok>;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 enum Tok {
     Start,
     Left,
@@ -20,6 +20,20 @@ pub fn day18() {
         nums.push_back(convert(&l));
     }
 
+    let mut highest = 0;
+    for i in 0..nums.len() {
+        for j in 0..nums.len() {
+            if i == j {
+                continue;
+            }
+            let mut lhs = nums[i].clone();
+            let mut rhs = nums[j].clone();
+            add(&mut lhs, &mut rhs);
+            process(&mut lhs);
+            highest = highest.max(mag(&mut lhs));
+        }
+    }
+
     let mut result = nums.pop_front().unwrap();
     while !nums.is_empty() {
         let mut next_num = nums.pop_front().unwrap();
@@ -27,6 +41,7 @@ pub fn day18() {
         process(&mut result);
     }
     println!("Day 18 - Part 1: {}", mag(&mut result));
+    println!("Day 18 - Part 2: {}", highest);
 }
 
 fn convert(l: &str) -> SnailNum {
@@ -46,6 +61,7 @@ fn convert(l: &str) -> SnailNum {
     data
 }
 
+#[test]
 fn stringify(num: &SnailNum) -> String {
     let mut s = String::new();
     for tok in num {
@@ -80,9 +96,12 @@ fn explode(num: &mut SnailNum) -> bool {
                     let right_tok = num.pop_front().unwrap();
                     let right_bracket = num.pop_front().unwrap();
                     if right_bracket != Tok::Right {
-                        panic!("nest is 5 deep and we don't have a right bracket {:?}", right_bracket);
+                        panic!(
+                            "nest is 5 deep and we don't have a right bracket {:?}",
+                            right_bracket
+                        );
                     }
-                    
+
                     // add rhs number to next number in the list
                     if let Tok::Num(right) = right_tok {
                         for next in num.iter_mut() {
@@ -90,11 +109,11 @@ fn explode(num: &mut SnailNum) -> bool {
                                 Tok::Num(n) => {
                                     *next = Tok::Num(*n + right);
                                     break;
-                                },
+                                }
                                 Tok::Start => {
                                     break;
-                                },
-                                _ => {},
+                                }
+                                _ => {}
                             }
                         }
                     } else {
@@ -111,7 +130,7 @@ fn explode(num: &mut SnailNum) -> bool {
                                 Tok::Start => {
                                     num.push_front(next);
                                     break;
-                                },
+                                }
                                 Tok::Num(n) => {
                                     num.push_back(Tok::Num(n + left));
                                     break;
@@ -127,7 +146,7 @@ fn explode(num: &mut SnailNum) -> bool {
                 } else {
                     num.push_back(t);
                 }
-            },
+            }
             Tok::Right => {
                 nest -= 1;
                 num.push_back(t);
@@ -227,7 +246,8 @@ fn add(lhs: &mut SnailNum, rhs: &mut SnailNum) {
 }
 
 fn mag(num: &mut SnailNum) -> u64 {
-    while num.len() > 4 {       // Start Left Ans Right
+    while num.len() > 4 {
+        // Start Left Ans Right
         let m = num.pop_front().unwrap();
         if m != Tok::Start {
             panic!("snail num does not start with a start");
@@ -241,13 +261,13 @@ fn mag(num: &mut SnailNum) -> u64 {
                 Tok::Left | Tok::Right => {
                     num.push_back(t);
                     was_num = false;
-                },
+                }
                 Tok::Num(n) => {
                     if was_num {
                         if let Tok::Num(lhs) = num.pop_back().unwrap() {
                             let mag = Tok::Num(3 * lhs + 2 * n);
-                            num.pop_back();     // remove the left bracket
-                            num.pop_front();    // remove the right bracket
+                            num.pop_back(); // remove the left bracket
+                            num.pop_front(); // remove the right bracket
                             num.push_back(mag);
                             was_num = false;
                         }
