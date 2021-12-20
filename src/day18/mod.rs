@@ -61,7 +61,7 @@ fn convert(l: &str) -> SnailNum {
     data
 }
 
-#[test]
+#[cfg(test)]
 fn stringify(num: &SnailNum) -> String {
     let mut s = String::new();
     for tok in num {
