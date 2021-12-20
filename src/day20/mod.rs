@@ -46,20 +46,12 @@ pub fn day20() {
     };
     enhance(&mut img, &bits);
     enhance(&mut img, &bits);
-
-    /*
-    for y in 0i64..img.width as i64 {
-        for x in 0i64..img.height as i64 {
-            if img.map.contains(&(x, y)) {
-                print!("#");
-            } else {
-                print!(".");
-            }
-        }
-        println!();
-    }
-    */
     println!("Day 20 - Part 1: {}", img.map.len());
+
+    for _ in 0..48 {
+        enhance(&mut img, &bits);
+    }
+    println!("Day 20 - Part 2: {}", img.map.len());
 }
 
 fn enhance(img: &mut Image, bits: &[bool]) {
