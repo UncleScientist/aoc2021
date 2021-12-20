@@ -79,29 +79,41 @@ fn accumulate(list: &mut VecDeque<Scanner>) -> (Vec<Scanner>, Vec<ScanData>) {
     (known, offsets)
 }
 
+fn rotate_around_y(
+    known: &Scanner,
+    b: &mut Vec<ScanData>,
+    check: &mut Scanner,
+) -> Option<ScanData> {
+    for _ in 0..4 {
+        if let Some(offset) = alignment(known, b) {
+            check.clear();
+            for point in b {
+                check.insert((point.0 + offset.0, point.1 + offset.1, point.2 + offset.2));
+            }
+            return Some(offset);
+        }
+        // rotate on y: x becomes -z, z becomes x
+        for point in b.iter_mut() {
+            *point = (point.2, point.1, -point.0);
+        }
+    }
+    None
+}
+
 fn rotate_and_compare(known: &Scanner, check: &mut Scanner) -> Option<ScanData> {
     let mut b: Vec<ScanData> = check.iter().copied().collect();
 
-    for x in 0..2 {
-        for _ in 0..4 {
-            for _ in 0..4 {
-                if let Some(offset) = alignment(known, &b) {
-                    check.clear();
-                    for point in b {
-                        check.insert((point.0 + offset.0, point.1 + offset.1, point.2 + offset.2));
-                    }
-                    return Some(offset);
-                }
-                // rotate on y: x becomes -z, z becomes x
-                for point in b.iter_mut() {
-                    *point = (point.2, point.1, -point.0);
-                }
-            }
-            // rotate around z: x becomes -y, y becomes x
-            for point in b.iter_mut() {
-                *point = (point.1, -point.0, point.2);
-            }
+    for _ in 0..4 {
+        if let Some(offset) = rotate_around_y(known, &mut b, check) {
+            return Some(offset);
         }
+        // rotate around z: x becomes -y, y becomes x
+        for point in b.iter_mut() {
+            *point = (point.1, -point.0, point.2);
+        }
+    }
+
+    for x in 0..2 {
         if x == 0 {
             // rotate top to the front
             for point in b.iter_mut() {
@@ -112,6 +124,9 @@ fn rotate_and_compare(known: &Scanner, check: &mut Scanner) -> Option<ScanData> 
             for point in b.iter_mut() {
                 *point = (point.0, -point.1, -point.2);
             }
+        }
+        if let Some(offset) = rotate_around_y(known, &mut b, check) {
+            return Some(offset);
         }
     }
 
