@@ -1,38 +1,63 @@
 use crate::utils::read_file;
 use regex::Regex;
-use std::collections::HashSet;
+
+#[derive(PartialEq)]
+enum Charge {
+    Positive,
+    Negative
+}
+
+struct Energy {
+    region: Region,
+    charge: Charge,
+}
 
 struct Reactor {
-    region: Vec<Region>,
+    reactor: Vec<Energy>,
 }
 
 impl Reactor {
     fn new() -> Reactor {
-        Reactor { region: Vec::new() }
+        Reactor { reactor: Vec::new() }
     }
 
-    fn len(&self) -> i64 {
-        0
-    }
-
-    fn join(&mut self, other: &Region) {
-        for r in &self.region {
-            if r.overlaps(&other) {
-                // do a join
+    fn process(&mut self, add: &Region) {
+        let mut update = Vec::new();
+        for r in &self.reactor {
+            if let Some(intersect) = r.region.intersect(add) {
+                if r.charge == Charge::Positive {
+                    update.push(Energy { region: intersect, charge: Charge::Negative });
+                } else {
+                    update.push(Energy { region: intersect, charge: Charge::Positive });
+                }
             }
         }
+        self.reactor.extend(update);
     }
 
-    fn remove(&mut self, other: &Region) {
-        for r in &self.region {
-            if r.overlaps(&other) {
-                // do a remove
+    fn insert(&mut self, add: &Region) {
+        self.process(add);
+        self.reactor.push(Energy { region: add.clone(), charge: Charge::Positive });
+    }
+
+    fn remove(&mut self, rem: &Region) {
+        self.process(rem);
+    }
+
+    fn volume(&self) -> i64 {
+        let mut total = 0;
+        for r in &self.reactor {
+            match r.charge {
+                Charge::Positive => total += r.region.volume(),
+                Charge::Negative => total -= r.region.volume(),
             }
         }
+
+        total
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 struct Region {
     xmin: i64,
     xmax: i64,
@@ -47,190 +72,39 @@ impl Region {
         Region { xmin, xmax, ymin, ymax, zmin, zmax }
     }
 
-    fn is_small(&self) -> bool {
-        self.xmin >= -50 && self.xmax <= 50 &&
-        self.ymin >= -50 && self.ymax <= 50 &&
-        self.zmin >= -50 && self.zmax <= 50
+    fn intersect(&self, other: &Region) -> Option<Region> {
+        if !self.overlaps(other) {
+            return None;
+        }
+        Some(Region {
+            xmin: self.xmin.max(other.xmin),
+            xmax: self.xmax.min(other.xmax),
+            ymin: self.ymin.max(other.ymin),
+            ymax: self.ymax.min(other.ymax),
+            zmin: self.zmin.max(other.zmin),
+            zmax: self.zmax.min(other.zmax),
+        })
     }
-
-    //
-    //  +-----+
-    //  |self |
-    //  |  +--+---------+
-    //  |  |  |   other |
-    //  +--+--+         |
-    //     |            |
-    //     +------------+
 
     fn overlaps(&self, other: &Region) -> bool {
-        // minA <= maxB && maxA >= minB iff minA <= maxA
-        let xoverlaps = (self.xmin >= other.xmin && self.xmin <= other.xmax) ||
-                        (self.xmax >= other.xmin && self.xmax <= other.xmax);
-        let yoverlaps = (self.ymin >= other.ymin && self.ymin <= other.ymax) ||
-                        (self.ymax >= other.ymin && self.ymax <= other.ymax);
-        let zoverlaps = (self.zmin >= other.zmin && self.zmin <= other.zmax) ||
-                        (self.zmax >= other.zmin && self.zmax <= other.zmax);
-        xoverlaps && yoverlaps && zoverlaps
+        self.xmin <= other.xmax && self.xmax >= other.xmin &&
+        self.ymin <= other.ymax && self.ymax >= other.ymin &&
+        self.zmin <= other.zmax && self.zmax >= other.zmin
     }
 
-    //
-    // +-----+                  ymax of top square
-    // |     |
-    // +-----+-----------+      ymax of bottom square
-    // |                 |
-    // +-----+-----------+      ymin of top square
-    //       |           |
-    //       +-----------+      ymin of bottom square
-    //
-    // xit   xxt         xxb
-
-    //
-    //          +-----+         ymax of top square
-    //          |self |
-    // +--------+-----+--+      ymax of bottom square
-    // | other  +-----+  |      ymin of top square
-    // +-----+-----------+      ymin of bottom square
-    // 
-
-    fn join(&self, other: &Region) -> Vec<Region> {
-        let mut result: Vec<Region> = Vec::new();
-
-        result.push(other.clone());
-
-        if !self.overlaps(other) {
-            result.push(self.clone());
-            return result;
-        }
-
-        if self.ymin < other.ymin {
-            if self.xmin < other.xmin {
-                if self.zmin < other.zmin {
-                    result.push(Region {
-                        xmin: self.xmin, xmax: other.xmin,
-                        ymin: self.ymin, ymax: other.ymin,
-                        zmin: self.zmin, zmax: other.zmin});
-                    if self.xmax > other.xmin {
-                        result.push(Region {
-                            xmin: self.xmin, xmax: self.xmax,
-                            ymin: self.ymin: ymax: other.ymin,
-                            zmin: self.zmin, zmax: other.zmin });
-                    }
-                    if self.zmax > other.zmin {
-                        result.push(Region {
-                            xmin: self.xmin, xmax: self.xmax,
-                            ymin: self.ymin, ymax: other.ymin,
-                            zmin: other.zmin, zmax: self.zmax })
-                    }
-                } else {
-                    // self.zmin > other.zmin
-                    result.push(Region {
-                        xmin: self.xmin, xmax: other.xmin,
-                        ymin: self.ymin, ymax: other.ymin,
-                        zmin: self.zmin, zmax: self.zmax });
-                    if self.xmax > other.xmin {
-                        result.push(Region {
-                            xmin: self.xmin, xmax: self.xmax,
-                            ymin: self.ymin, ymax: other.ymin,
-                            zmin: self.zmin, zmax: self.zmax });
-                    }
-                }
-            } else {
-                something
-            }
-        } else {
-            something
-        }
-
-        //  +-------------+
-        //  |  other      |
-        //  |  +-------+  |
-        //  |  | self  |  |
-        //  |  +-------+  |
-        //  +-------------+
-
-        if self.xmin >= other.xmin && self.xmax <= other.xmax &&
-           self.ymin >= other.ymin && self.ymax <= other.ymax {
-            result.push(other.clone());
-            if self.zmax > other.zmax {
-                // sticking out away from us
-                result.push(Region {
-                    xmin: self.xmin, xmax: self.xmax,
-                    ymin: self.ymin, ymax: self.ymax,
-                    zmin: other.zmax, zmax: self.zmax });
-            }
-            if self.zmin < other.zmin {
-                // sticking out towards us
-                result.push(Region {
-                    xmin: self.xmin, xmax: self.xmax,
-                    ymin: self.ymin, ymax: self.ymax,
-                    zmin: self.zmin, zmax: other.zmin });
-            }
-        } else if self.xmin >= other.xmin && self.xmax <= other.xmax &&
-           self.zmin >= other.zmin && self.zmax <= other.zmax {
-            result.push(other.clone());
-            if self.ymax > other.ymax {
-                result.push(Region {
-                    xmin: self.xmin, xmax: self.xmax,
-                    ymin: other.ymax, ymax: self.ymax,
-                    zmin: self.zmin, zmax: self.zmax });
-            }
-            if self.ymin < other.ymin {
-                // sticking out towards us
-                result.push(Region {
-                    xmin: self.xmin, xmax: self.xmax,
-                    ymin: self.ymin, ymax: other.ymin,
-                    zmin: self.zmin, zmax: self.zmax });
-            }
-        } else if self.ymin >= other.ymin && self.ymax <= other.ymax &&
-           self.zmin >= other.zmin && self.zmax <= other.zmax {
-            result.push(other.clone());
-            if self.ymax > other.ymax {
-                result.push(Region {
-                    xmin: other.xmax, xmax: self.xmax,
-                    ymin: self.ymin, ymax: self.ymax,
-                    zmin: self.zmin, zmax: self.zmax });
-            }
-            if self.ymin < other.ymin {
-                // sticking out towards us
-                result.push(Region {
-                    xmin: self.xmin, xmax: other.xmin,
-                    ymin: self.ymin, ymax: self.ymax,
-                    zmin: self.zmin, zmax: self.zmax });
-            }
-        } else {
-            if self.ymax > other.ymax {
-                result.push(Region {
-                    xmin: self.xmin, xmax: self.xmax,
-                    ymin: other.ymax, ymax: self.ymax,
-                    zmin: self.zmin, zmax: self.zmax
-                });
-                if self.zmin < other.zmin {
-                    result.push(other.clone());
-                    result.push(Region {
-                        xmin: self.xmin, xmax: self.xmax,
-                        ymin: self.ymin, ymax: other.ymax,
-                        zmin: self.zmin, zmax: other.zmin });
-                } else if self.zmax > other.zmax {
-                    result.push(other.clone());
-                    result.push
-                }
-                if self.xmax > other.xmax {
-                    result.push(Region {
-                        xmin: other.xmax, xmax: self.xmax,
-                        ymin: self.ymin, ymax: other.ymax,
-                        zmin: self.zmin, zmax: self.zmax });
-                }
-            }
-        }
-        result
+    fn volume(&self) -> i64 {
+        (self.xmax - self.xmin + 1) *
+        (self.ymax - self.ymin + 1) *
+        (self.zmax - self.zmin + 1)
     }
+
 }
 
 pub fn day22() {
-    let lines = read_file("inputs/test-day22.txt");
+    let lines = read_file("inputs/input-day22.txt");
 
-    // let mut reactor: HashSet<(i64, i64, i64)> = HashSet::new();
-    let mut reactor = Reactor::new();
+    let mut part1 = Reactor::new();
+    let mut part2 = Reactor::new();
 
     let re = Regex::new(r"x=(?P<xmin>-*\d+)\.\.(?P<xmax>-*\d+),y=(?P<ymin>-*\d+)\.\.(?P<ymax>-*\d+),z=(?P<zmin>-*\d+)\.\.(?P<zmax>-*\d+)").unwrap();
 
@@ -246,32 +120,23 @@ pub fn day22() {
 
         let r = Region::new(xmin, xmax, ymin, ymax, zmin, zmax);
 
-        /*
-        if r.is_small() {
-            for x in xmin..=xmax {
-                for y in ymin..=ymax {
-                    for z in zmin..=zmax {
-                        if switch == "on" {
-                            reactor.insert((x, y, z));
-                        } else {
-                            reactor.remove(&(x, y, z));
-                        }
-                    }
-                }
-            }
+        if xmin >= -50 && xmax <= 50 && ymin >= -50 && ymax <= 50 && zmin >= -50 && zmax <= 50 {
+           if switch == "on" {
+               part1.insert(&r);
+           } else {
+               part1.remove(&r);
+           }
         }
-        */
 
-        if r.is_small() {
-            if switch == "on" {
-                reactor.join(&r);
-            } else {
-                reactor.remove(&r);
-            }
+        if switch == "on" {
+            part2.insert(&r);
+        } else {
+            part2.remove(&r);
         }
     }
 
-    println!("Day 22 - Part 1: {}", reactor.len());
+    println!("Day 22 - Part 1: {}", part1.volume());
+    println!("Day 22 - Part 2: {}", part2.volume());
 }
 
 #[cfg(test)]
