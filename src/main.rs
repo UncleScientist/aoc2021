@@ -26,6 +26,7 @@ mod day19;
 mod day20;
 mod day21;
 mod day22;
+mod day23;
 
 fn main() {
     let days: Vec<fn()> = vec![
@@ -51,6 +52,7 @@ fn main() {
         day20::day20,
         day21::day21,
         day22::day22,
+        day23::day23,
     ];
 
     let args: Vec<String> = env::args().collect();
@@ -65,7 +67,8 @@ fn main() {
             which_day = day - 1;
         }
     } else if today.month() == 12 {
-        which_day = today.day() as usize - 1;
+        // which_day = today.day() as usize - 1;
+        which_day = 22;
     } else {
         run_all = true;
     }
