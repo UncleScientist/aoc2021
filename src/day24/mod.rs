@@ -164,7 +164,7 @@ pub fn day24() {
         }
         if alu.reg[3] != 0 {
             let mut i = input.len() - 1;
-            while i >= 0 {
+            loop {
                 while !inc[i] {
                     i -= 1;
                 }
