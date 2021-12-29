@@ -151,6 +151,40 @@ pub fn day24() {
         print!("{}", a);
     }
     println!();
+
+    let mut input = vec![1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
+    let answer = 'next_trial2: loop {
+        let mut trial = input.clone();
+        loop {
+            if let Some(r) = alu.run(&trial) {
+                trial[r.0 - 1] = r.1;
+            } else {
+                break;
+            }
+        }
+        if alu.reg[3] != 0 {
+            let mut i = input.len() - 1;
+            while i >= 0 {
+                while !inc[i] {
+                    i -= 1;
+                }
+                if input[i] < 9 {
+                    input[i] += 1;
+                    continue 'next_trial2;
+                }
+                input[i] = 1;
+                i -= 1;
+            }
+        } else {
+            break trial;
+        }
+    };
+
+    print!("Day 24 - Part 2: ");
+    for a in answer {
+        print!("{}", a);
+    }
+    println!();
 }
 
 #[cfg(test)]
