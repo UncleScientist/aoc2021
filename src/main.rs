@@ -70,7 +70,7 @@ fn main() {
         } else if let Ok(day) = args[1].parse::<usize>() {
             which_day = day - 1;
         }
-    } else if today.month() == 12 {
+    } else if today.month() == 12 && today.day() < 26 {
         which_day = today.day() as usize - 1;
     } else {
         run_all = true;

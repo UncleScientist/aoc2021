@@ -139,6 +139,7 @@ impl State {
         result
     }
 
+    #[cfg(test)]
     fn print(&self, depth: usize) { 
         print!("#############\n#");
         for h in self.1.iter() {
