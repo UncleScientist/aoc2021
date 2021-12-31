@@ -33,14 +33,14 @@ impl Amphipod {
 
 }
 
-type Rooms = [[Amphipod; 2]; 4];
+type Rooms = [[Amphipod; 4]; 4];
 type Hallway = [Amphipod; 11];
 
 #[derive(PartialEq, Eq, Hash, Copy, Clone, Debug)]
 struct State(Rooms, Hallway);
 
 impl State {
-    fn neighbors(&self) -> Vec<(State, i64)> {
+    fn neighbors(&self, depth: usize) -> Vec<(State, i64)> {
         let mut result: Vec<(State, i64)> = Vec::new();
 
         let (room, hall) = (self.0, self.1);
@@ -48,26 +48,35 @@ impl State {
         // Come up with a list of moves for amphipods leaving a room and going into the hallway
         for (c, amps) in room.iter().enumerate() {
             let col = 2 + c * 2;
-            for a in 0..2 {
-                if amps[a] == Empty {
+            let mut count = 0;
+            for a in 0..depth {
+                if amps[a] == Empty || amps[a].col() == col {
+                    count += 1;
+                }
+            }
+            if count == depth {
+                continue;
+            }
+
+            for a in 0..depth {
+                if room[c][a] == Empty {
                     continue;
                 }
-                let desired = amps[a].col();
-                if a == 0 && col == desired && amps[0] == amps[1] {
-                    continue;
-                }
-                if a == 1 && col == desired {
-                    continue;
-                }
+
                 let mut possible = Vec::new();
-                for h in [0, 1, 3, 5, 7, 9, 10] {
+                'hallway: for h in [0, 1, 3, 5, 7, 9, 10] {
                     if hall[h] != Empty {
                         if h < col {
                             possible.clear();
                         } else if h > col {
                             break;
                         }
-                    } else if a == 0 || (a == 1 && amps[0] == Empty) {
+                    } else {
+                        for check in 0..a {
+                            if room[c][check] != Empty {
+                                continue 'hallway;
+                            }
+                        }
                         possible.push((h, a));
                     }
                 }
@@ -105,29 +114,32 @@ impl State {
                 }
             }
             let r = desired / 2 - 1;
-            if room[r][0] == Empty && room[r][1] == Empty {
-                let mut newroom = room.clone();
-                let mut newhall = hall.clone();
-                newroom[r][1] = *amp;
-                newhall[c] = Empty;
-                let cost = amp.cost();
-                result.push((State(newroom, newhall),
-                    cost * (2 + (desired as i64 - c as i64).abs())));
-            } else if room[r][0] == Empty && room[r][1] == *amp {
-                let mut newroom = room.clone();
-                let mut newhall = hall.clone();
-                newroom[r][0] = *amp;
-                newhall[c] = Empty;
-                let cost = amp.cost();
-                result.push((State(newroom, newhall),
-                    cost * (1 + (desired as i64 - c as i64).abs())));
+            let mut best = depth - 1;
+            loop {
+                if room[r][best] == Empty {
+                    let mut newroom = room.clone();
+                    let mut newhall = hall.clone();
+                    newroom[r][best] = *amp;
+                    newhall[c] = Empty;
+                    let cost = amp.cost();
+                    result.push((State(newroom, newhall),
+                        cost * (best as i64 + 1 + (desired as i64 - c as i64).abs())));
+                    break;
+                } else if room[r][best] != *amp {
+                    break;
+                }
+
+                if best == 0 {
+                    break;
+                }
+                best -= 1;
             }
         }
 
         result
     }
 
-    fn print(&self) { 
+    fn print(&self, depth: usize) { 
         print!("#############\n#");
         for h in self.1.iter() {
             match h {
@@ -149,46 +161,43 @@ impl State {
             }
         }
         print!("##\n  #");
-        for a in self.0 {
-            match a[1] {
-                A => print!("A#"),
-                B => print!("B#"),
-                C => print!("C#"),
-                D => print!("D#"),
-                Empty => print!(".#"),
+        for d in 1..depth {
+            for a in self.0 {
+                match a[d] {
+                    A => print!("A#"),
+                    B => print!("B#"),
+                    C => print!("C#"),
+                    D => print!("D#"),
+                    Empty => print!(".#"),
+                }
             }
+            print!("\n  #");
         }
-        println!("\n  #########");
+        println!("########");
     }
 
 }
 
 
 pub fn day23() {
-    let e: Rooms = [[A, A], [B, B], [C, C], [D, D]];
-    // let r: Rooms = [[B, A], [C, D], [B, C], [D, A]]; // test data
-    let r: Rooms = [[B, C], [C, D], [A, D], [B, A]]; // given data
-    let h: Hallway = [Empty; 11];
-    let s: State = State(r, h);
-    let end_condition = State(e, h);
+    let end_part1: Rooms = [[A, A, Empty, Empty], [B, B, Empty, Empty], [C, C, Empty, Empty], [D, D, Empty, Empty]];
+    let end_part2: Rooms = [[A, A, A, A], [B, B, B, B], [C, C, C, C], [D, D, D, D]];
+    // let r: Rooms = [[B, D, D, A], [C, C, B, D], [B, B, A, C], [D, A, C, A]]; // test data
+    let start_part1: Rooms = [[B, C, Empty, Empty], [C, D, Empty, Empty], [A, D, Empty, Empty], [B, A, Empty, Empty]]; // given data
+    let start_part2: Rooms = [[B, D, D, C], [C, C, B, D], [A, B, A, D], [B, A, C, A]]; // given data
 
-    /*
-    let tr: Rooms = [[Empty, A], [B, B], [C, C], [D, D]];
-    let th: Hallway = [Empty,Empty,Empty,Empty,Empty,Empty,Empty,Empty,Empty,Empty,A];
-    let ts = State(tr, th);
-    println!("{:?}", ts);
-    for n in ts.neighbors() {
-        println!(" > {:?}", n);
-    }
-    std::process::exit(0);
-    */
+    solve(&start_part1, &end_part1, 2);
+    solve(&start_part2, &end_part2, 4);
+}
 
-    s.print();
-    end_condition.print();
-
+fn solve(start: &Rooms, end: &Rooms, depth: usize) {
     let mut qset: HashMap<State, i64> = HashMap::new();
     let mut dist: HashMap<State, i64> = HashMap::new();
-    
+    let mut prev: HashMap<State, State> = HashMap::new();
+
+    let s: State = State(*start, [Empty; 11]);
+    let end_condition = State(*end, [Empty; 11]);
+
     qset.insert(s, 0);
 
     while !qset.is_empty() {
@@ -207,18 +216,18 @@ pub fn day23() {
 
         let found = found.unwrap();
         if found == end_condition {
-            println!("Day 23 - Part 1: {} ", smallest);
+            println!("Day 23 - Part {}: {} ", depth / 2, smallest);
             break;
         }
 
         qset.remove(&found);
 
-        for n in found.neighbors() {
-            // n.0.print();
+        for n in found.neighbors(depth) {
             let alt = smallest + n.1;
             if alt < *dist.get(&n.0).unwrap_or(&i64::MAX) {
                 dist.insert(n.0.clone(), alt);
                 qset.insert(n.0.clone(), alt);
+                prev.insert(n.0.clone(), found.clone());
             }
         }
     }
